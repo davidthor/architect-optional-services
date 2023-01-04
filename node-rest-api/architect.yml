@@ -1,0 +1,61 @@
+name: node-rest-api
+description: A simple sign in REST API built with Node.js, Express, and a postgres database.
+homepage: https://github.com/architect-templates/node-rest-api
+keywords:
+  - architect
+  - examples
+  - stateful
+  - postgres
+  - nodejs
+  - reactjs
+
+secrets:
+  db_user:
+    description: Root user to assign to the component's DB
+    default: architect
+  db_pass:
+    description: Root password to assign to the component's DB
+    default: secret
+  db_name:
+    description: Name of the DB the component will store content in
+    default: api-db
+  db_port:
+    description: Port for the db
+    default: 5432
+  api_port:
+    description: Port for api
+    default: 8080
+
+services:
+  api-db:
+    image: postgres:12
+    interfaces:
+      database:
+        port: ${{ secrets.db_port }}
+        protocol: postgresql
+    environment:
+      POSTGRES_USER: ${{ secrets.db_user }}
+      POSTGRES_PASSWORD: ${{ secrets.db_pass }}
+      POSTGRES_DB: ${{ secrets.db_name }}
+  api:
+    build:
+      context: .
+    interfaces:
+      main:
+        port: ${{ secrets.api_port }}
+        ingress:
+          subdomain: api
+    environment:
+      DB_ADDR: ${{ services.api-db.interfaces.database.url }}/${{ secrets.db_name }}
+      DB_USER: ${{ secrets.db_user }}
+      DB_PASS: ${{ secrets.db_pass }}
+      PORT: ${{ secrets.api_port }}
+    debug:
+      command: npm run dev
+      build:
+        args:
+          NODE_ENV: development
+      volumes:
+        src:
+          mount_path: /usr/src/app/src
+          host_path: ./src
